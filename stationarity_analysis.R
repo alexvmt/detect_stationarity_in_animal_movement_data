@@ -12,6 +12,8 @@ library(geosphere)
 library(ggplot2)
 library(leaflet)
 library(magrittr)
+library(htmlwidgets)
+library(htmltools)
 
 # select species
 # species <- "stork"
@@ -84,7 +86,7 @@ if (species == "stork") {
 }
 
 # set last n days
-last_n_days <- 30
+last_n_days <- 365
 
 for(individual in individuals) {
   
@@ -166,6 +168,24 @@ ggplot(data_to_plot, aes(x = date, y = distance_meters, group = 1)) +
 lon <- tail(processed_data[processed_data$id == id, ], 1)$lon
 lat <- tail(processed_data[processed_data$id == id, ], 1)$lat
 
+tag.map.title <- tags$style(HTML("
+  .leaflet-control.map-title { 
+    transform: translate(-50%,20%);
+    position: fixed !important;
+    left: 50%;
+    text-align: center;
+    padding-left: 10px; 
+    padding-right: 10px; 
+    background: rgba(255,255,255,0.75);
+    font-weight: bold;
+    font-size: 24px;
+  }
+"))
+
+title <- tags$div(
+  tag.map.title, HTML(paste0("Last location of individual ", id, " on ", end_date))
+)  
+
 leaflet() %>% 
   addTiles() %>% 
   setView(lng = lon,
@@ -174,4 +194,5 @@ leaflet() %>%
   addCircleMarkers(lng = lon,
                    lat = lat,
                    label = paste0("lon: ", lon, "; lat: ", lat),
-                   color = "red")
+                   color = "red") %>%
+  addControl(title, position = "topleft", className="map-title")

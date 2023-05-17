@@ -12,3 +12,9 @@ Data used:
 Download data from: https://www.movebank.org/cms/webapp?gwt_fragment=page=search_map
 
 Move downloaded data into newly created directory called `data`.
+
+Below are a timeseries and a map example for an individual from the buffalo dataset:
+
+![timeseries example](timeseries_example.png 'timeseries example')
+
+![map example](map_example.png 'map example')

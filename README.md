@@ -17,7 +17,7 @@ Download data from: https://www.movebank.org/cms/webapp?gwt_fragment=page=search
 
 Move downloaded data into newly created directory called `data`.
 
-Below are a timeseries and a map example for an individual from the buffalo dataset:
+Below are a timeseries and a map example for an individual from the stork dataset:
 
 ![timeseries example](timeseries_example.png 'timeseries example')
 

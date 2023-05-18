@@ -16,8 +16,8 @@ library(htmlwidgets)
 library(htmltools)
 
 # select species
-# species <- "stork"
-species <- "buffalo"
+species <- "stork"
+# species <- "buffalo"
 # species <- "bat"
 
 # specify file and relevant columns (note that . is automatically replaced with - for column names in readr's read_csv() function)
@@ -68,7 +68,7 @@ colnames(processed_data) <- colnames(data)[-length(colnames(data))]
 # assume that a tag's stationarity is definite and thus only check out last n days of observations
 # get observations within last n days for each individual and clean data on the way
 if (species == "stork") {
-  individuals <- sample(individuals, 4) # because the stork dataset is comparably large
+  individuals <- sample(individuals, 10) # because the stork dataset is comparably large
 } else {
   # do nothing and proceed
 }
@@ -196,3 +196,39 @@ leaflet() %>%
                    label = paste0("lon: ", lon, "; lat: ", lat),
                    color = "red") %>%
   addControl(title, position = "topleft", className = "map-title")
+
+# create empty dataframe to store summary data
+summary <- data.frame(matrix(ncol = 5, nrow = 0))
+colnames(summary) <- c("individual", "last_n_days", "number_observations", "total_distance", "mean_distance")
+
+# compute summary statistics for last n days per individual
+for(individual in individuals) {
+  
+  for (last_n_days in c(3, 7, 14, 21, 28)) {
+    
+  # filter data based on individual
+  individual_aggregated_data <- data_agg_id_date[data_agg_id_date$id == individual, ]
+  
+  # get max date
+  max_date <- max(individual_aggregated_data$date)
+  
+  # filter data based on date
+  individual_aggregated_data_filtered <- individual_aggregated_data[individual_aggregated_data$date > max_date - last_n_days, ]
+  
+  # create empty dataframe to store individual summary data
+  individual_summary_data <- data.frame(matrix(ncol = 5, nrow = 0))
+  colnames(individual_summary_data) <- c("individual", "last_n_days", "number_observations", "total_distance", "mean_distance")
+  individual_summary_data[1, 1] = individual
+  individual_summary_data[1, 2] = last_n_days
+  
+  # compute summary statistics
+  individual_summary_data[1, 3] = dim(individual_aggregated_data_filtered)[1]
+  individual_summary_data[1, 4] = sum(individual_aggregated_data_filtered$distance_meters)
+  individual_summary_data[1, 5] = mean(individual_aggregated_data_filtered$distance_meters)
+  
+  # append summary data to existing dataframe
+  summary <- rbind(summary, individual_summary_data)
+    
+  }
+  
+}

@@ -1,8 +1,12 @@
-# detect_stationarity_in_animal_movement_data
+# Detect stationarity in animal movement data
 
 EMAC23 Coding Challenge: https://www.moveapps.org/#news
 
-Use Cases: https://www.moveapps.org/assets/EMAC23_CodingChallenge_Details2.eeb3420c.pdf -> Challenge 1
+Use Cases: https://www.moveapps.org/assets/EMAC23_CodingChallenge_Details2.eeb3420c.pdf -> Challenge 1: Stationarity
+
+Assume that stationarity is definite, e. g.:
+- animal is deceased
+- animal has dropped tag
 
 Data used:
 - LifeTrack White Stork SW Germany (Movebank ID 21231406)

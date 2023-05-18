@@ -22,21 +22,13 @@ species <- "buffalo"
 
 # specify file and relevant columns (note that . is automatically replaced with - for column names in readr's read_csv() function)
 if (species == "stork") {
-  
   file <- "LifeTrack White Stork SW Germany.csv"
-  
 } else if (species == "buffalo") {
-  
   file <- "Kruger African Buffalo, GPS tracking, South Africa.csv"
-  
 } else if (species == "bat") {
-  
   file <- "Straw-colored fruit bats (Eidolon helvum) in Africa 2009-2014.csv"
-  
 } else {
-  
   print("Selected species not available. Please select one that is available.")
-  
 }
 
 id_col <- "tag-local-identifier"
@@ -76,13 +68,9 @@ colnames(processed_data) <- colnames(data)[-length(colnames(data))]
 # assume that a tag's stationarity is definite and thus only check out last n days of observations
 # get observations within last n days for each individual and clean data on the way
 if (species == "stork") {
-  
-  individuals <- sample(individuals, 4)
-  
+  individuals <- sample(individuals, 4) # because the stork dataset is comparably large
 } else {
-  
   # do nothing and proceed
-  
 }
 
 # set last n days
@@ -111,7 +99,7 @@ for(individual in individuals) {
   
 }
 
-# remove raw data
+# remove data that is not needed anymore
 rm(data, individual_data)
 gc()
 
@@ -137,9 +125,12 @@ processed_data$lat_lag <- ifelse(processed_data$id == processed_data$id_lag,
 
 # calculate distance between two measurements
 calculate_distance_in_meters_between_coordinates <- function(lon_a, lat_a, lon_b, lat_b) {
+  
   if(anyNA(c(lon_a, lat_a, lon_b, lat_b))) return(NA)
+  
   distm(c(lon_a, lat_a), c(lon_b, lat_b), fun = distHaversine)
-  }
+
+}
 
 processed_data$distance_meters <- mapply(lon_a = processed_data$lon,
                                          lat_a = processed_data$lat,
@@ -150,18 +141,27 @@ processed_data$distance_meters <- mapply(lon_a = processed_data$lon,
 # aggregate distances by time interval and individual
 data_agg_id_date <- aggregate(distance_meters ~ date + id, data = processed_data, FUN = sum)
 
+# get number of aggregated observations per individual
+aggregate(cbind(count = id) ~ id, data = data_agg_id_date, FUN = function(x){NROW(x)})
+
 # select individual
-id <- individuals[1]
+id <- sample(individuals, 1)
 
 # plot timeseries for selected individual
 data_to_plot <- data_agg_id_date[data_agg_id_date$id == id, ]
 start_date <- min(data_to_plot$date)
 end_date <- max(data_to_plot$date)
 
+if (dim(data_to_plot)[1] > 30) {
+  scale <- "1 week"
+} else {
+  scale <- "1 day"
+}
+
 ggplot(data_to_plot, aes(x = date, y = distance_meters, group = 1)) +
   geom_line(linewidth = 0.75) +
-  scale_x_date(breaks = seq(start_date, end_date, by = "1 day")) +
-  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1)) +
+  scale_x_date(breaks = seq(start_date, end_date, by = scale)) +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) +
   ggtitle(paste0("Distance in meters moved per day for individual ", id, " between ", start_date, " and ", end_date))
 
 # plot last coordinates for selected individual
@@ -195,4 +195,4 @@ leaflet() %>%
                    lat = lat,
                    label = paste0("lon: ", lon, "; lat: ", lat),
                    color = "red") %>%
-  addControl(title, position = "topleft", className="map-title")
+  addControl(title, position = "topleft", className = "map-title")

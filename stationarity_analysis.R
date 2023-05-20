@@ -16,9 +16,10 @@ library(htmlwidgets)
 library(htmltools)
 
 # select species
-species <- "stork"
+# species <- "stork"
 # species <- "buffalo"
 # species <- "bat"
+species <- "goose"
 
 # specify file and relevant columns (note that . is automatically replaced with - for column names in readr's read_csv() function)
 if (species == "stork") {
@@ -27,6 +28,8 @@ if (species == "stork") {
   file <- "Kruger African Buffalo, GPS tracking, South Africa.csv"
 } else if (species == "bat") {
   file <- "Straw-colored fruit bats (Eidolon helvum) in Africa 2009-2014.csv"
+} else if (species == "goose") {
+  file <- "Migration timing in white-fronted geese (data from Klzsch et al. 2016).csv"
 } else {
   print("Selected species not available. Please select one that is available.")
 }

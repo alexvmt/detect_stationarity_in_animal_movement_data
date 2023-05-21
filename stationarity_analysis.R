@@ -7,7 +7,7 @@ set.seed(42)
 options(scipen = 999)
 
 # load packages
-library(readr)
+library(move)
 library(geosphere)
 library(ggplot2)
 library(leaflet)
@@ -15,47 +15,42 @@ library(magrittr)
 library(htmlwidgets)
 library(htmltools)
 
-# select species
-# species <- "stork"
-# species <- "buffalo"
-# species <- "bat"
-species <- "goose"
+# select last n days to be analyzed (minimum 28)
+last_n_days <- 365
 
-# specify file and relevant columns (note that . is automatically replaced with - for column names in readr's read_csv() function)
-if (species == "stork") {
-  file <- "LifeTrack White Stork SW Germany.csv"
-} else if (species == "buffalo") {
-  file <- "Kruger African Buffalo, GPS tracking, South Africa.csv"
+# select species
+species <- "buffalo"
+# species <- "bat"
+# species <- "goose"
+
+# select file
+if (species == "buffalo") {
+  file <- "Kruger African Buffalo, GPS tracking, South Africa.rds"
 } else if (species == "bat") {
-  file <- "Straw-colored fruit bats (Eidolon helvum) in Africa 2009-2014.csv"
+  file <- "Straw-colored fruit bats (Eidolon helvum) in Africa 2009-2014.rds"
 } else if (species == "goose") {
-  file <- "Migration timing in white-fronted geese (data from Klzsch et al. 2016).csv"
+  file <- "Migration timing in white-fronted geese (data from Klzsch et al. 2016).rds"
 } else {
   print("Selected species not available. Please select one that is available.")
 }
 
-id_col <- "tag-local-identifier"
-timestamp_col <- "timestamp"
-lon_col <- "location-long"
-lat_col <- "location-lat"
-
 # read data
-data <- read_csv(paste0("../data/", file), col_select = all_of(c(id_col, timestamp_col, lon_col, lat_col)))
+data <- readRDS(paste0("../data/", file))
 
-# rename columns
-names(data)[names(data) == id_col] <- "id"
-names(data)[names(data) == timestamp_col] <- "timestamp"
-names(data)[names(data) == lon_col] <- "lon"
-names(data)[names(data) == lat_col] <- "lat"
+# transform movestack to dataframe
+data <- as.data.frame(data)
 
-# get dimensions and unique ids
+# cast tag.local.identifier to character
+data$tag.local.identifier <- as.character(data$tag.local.identifier)
+
+# get dimensions and individuals
 dim(data)
-individuals <- unique(data$id)
+individuals <- unique(data$tag.local.identifier)
 length(individuals)
 
 # create year and date columns
-data$date <- as.Date(format(data$timestamp, format = "%Y-%m-%d"))
-data$year <- as.integer(format(data$timestamp, format = "%Y"))
+data$date <- as.Date(format(data$timestamps, format = "%Y-%m-%d"))
+data$year <- as.integer(format(data$timestamps, format = "%Y"))
 
 # get number of observations per year
 aggregate(cbind(count = year) ~ year, data = data, FUN = function(x){NROW(x)})
@@ -65,30 +60,24 @@ min(data$date)
 max(data$date)
 
 # create empty dataframe to store processed individual data
-processed_data <- data.frame(matrix(ncol = length(colnames(data)[-length(colnames(data))]), nrow = 0))
-colnames(processed_data) <- colnames(data)[-length(colnames(data))]
+processed_data <- data.frame(matrix(ncol = 5, nrow = 0))
+processed_data_columns <- c("tag.local.identifier", "timestamps", "location.long", "location.lat", "date")
+colnames(processed_data) <- processed_data_columns
 
-# assume that a tag's stationarity is definite and thus only check out last n days of observations
-# get observations within last n days for each individual and clean data on the way
-if (species == "stork") {
-  individuals <- sample(individuals, 10) # because the stork dataset is comparably large
-} else {
-  # do nothing and proceed
-}
-
-# set last n days
-last_n_days <- 365
-
+# assume that a tag's stationarity is definite and thus only use last n days of observations per individual
 for(individual in individuals) {
   
   # filter data based on individual
-  individual_data <- data[data$id == individual, ]
+  individual_data <- data[data$tag.local.identifier == individual, ]
+  
+  # subset data to relevant columns
+  individual_data <- individual_data[ , processed_data_columns]
   
   # drop rows with missing values
   individual_data <- na.omit(individual_data)
   
   # drop duplicated rows
-  individual_data <- individual_data[!duplicated(individual_data[c("id", "timestamp")]), ]
+  individual_data <- individual_data[!duplicated(individual_data[c("tag.local.identifier", "timestamps")]), ]
   
   # extract max and min date
   max_date <- max(individual_data$date)
@@ -107,26 +96,26 @@ rm(data, individual_data)
 gc()
 
 # order data
-processed_data <- processed_data[order(processed_data$id, processed_data$timestamp), ]
+processed_data <- processed_data[order(processed_data$tag.local.identifier, processed_data$timestamps), ]
 
 # create lag columns
-processed_data$id_lag <- c(NA, head(processed_data$id, -1))
-processed_data$lon_lag <- c(NA, head(processed_data$lon, -1))
-processed_data$lat_lag <- c(NA, head(processed_data$lat, -1))
+processed_data$tag.local.identifier.lag <- c(NA, head(processed_data$tag.local.identifier, -1))
+processed_data$location.long.lag <- c(NA, head(processed_data$location.long, -1))
+processed_data$location.lat.lag <- c(NA, head(processed_data$location.lat, -1))
 
-processed_data$id_lag <- ifelse(processed_data$id == processed_data$id_lag,
-                                processed_data$id_lag,
-                                NA)
+processed_data$tag.local.identifier.lag <- ifelse(processed_data$tag.local.identifier == processed_data$tag.local.identifier.lag,
+                                                  processed_data$tag.local.identifier.lag,
+                                                  NA)
 
-processed_data$lon_lag <- ifelse(processed_data$id == processed_data$id_lag,
-                                 processed_data$lon_lag,
-                                 NA)
+processed_data$location.long.lag <- ifelse(processed_data$tag.local.identifier == processed_data$tag.local.identifier.lag,
+                                           processed_data$location.long.lag,
+                                           NA)
 
-processed_data$lat_lag <- ifelse(processed_data$id == processed_data$id_lag,
-                                 processed_data$lat_lag,
-                                 NA)
+processed_data$location.lat.lag <- ifelse(processed_data$tag.local.identifier == processed_data$tag.local.identifier.lag,
+                                          processed_data$location.lat.lag,
+                                          NA)
 
-# calculate distance between two measurements
+# calculate distance between two location measurements
 calculate_distance_in_meters_between_coordinates <- function(lon_a, lat_a, lon_b, lat_b) {
   
   if(anyNA(c(lon_a, lat_a, lon_b, lat_b))) return(NA)
@@ -135,27 +124,27 @@ calculate_distance_in_meters_between_coordinates <- function(lon_a, lat_a, lon_b
 
 }
 
-processed_data$distance_meters <- mapply(lon_a = processed_data$lon,
-                                         lat_a = processed_data$lat,
-                                         lon_b = processed_data$lon_lag,
-                                         lat_b = processed_data$lat_lag,
+processed_data$distance_meters <- mapply(lon_a = processed_data$location.long,
+                                         lat_a = processed_data$location.lat,
+                                         lon_b = processed_data$location.long.lag,
+                                         lat_b = processed_data$location.lat.lag,
                                          FUN = calculate_distance_in_meters_between_coordinates)
 
 # aggregate distances by time interval and individual
-data_agg_id_date <- aggregate(distance_meters ~ date + id, data = processed_data, FUN = sum)
+data_aggregated <- aggregate(distance_meters ~ date + tag.local.identifier, data = processed_data, FUN = sum)
 
 # get number of aggregated observations per individual
-aggregate(cbind(count = id) ~ id, data = data_agg_id_date, FUN = function(x){NROW(x)})
+aggregate(cbind(count = tag.local.identifier) ~ tag.local.identifier, data = data_aggregated, FUN = function(x){NROW(x)})
 
 # select individual
-id <- sample(individuals, 1)
+individual <- sample(individuals, 1)
 
 # plot timeseries for selected individual
-data_to_plot <- data_agg_id_date[data_agg_id_date$id == id, ]
+data_to_plot <- data_aggregated[data_aggregated$tag.local.identifier == individual, ]
 start_date <- min(data_to_plot$date)
 end_date <- max(data_to_plot$date)
 
-if (dim(data_to_plot)[1] > 30) {
+if (dim(data_to_plot)[1] > 31) {
   scale <- "1 week"
 } else {
   scale <- "1 day"
@@ -165,11 +154,11 @@ ggplot(data_to_plot, aes(x = date, y = distance_meters, group = 1)) +
   geom_line(linewidth = 0.75) +
   scale_x_date(breaks = seq(start_date, end_date, by = scale)) +
   theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) +
-  ggtitle(paste0("Distance in meters moved per day for individual ", id, " between ", start_date, " and ", end_date))
+  ggtitle(paste0("Distance in meters moved per day for individual ", individual, " between ", start_date, " and ", end_date))
 
 # plot last coordinates for selected individual
-lon <- tail(processed_data[processed_data$id == id, ], 1)$lon
-lat <- tail(processed_data[processed_data$id == id, ], 1)$lat
+lon <- tail(processed_data[processed_data$tag.local.identifier == individual, ], 1)$location.long
+lat <- tail(processed_data[processed_data$tag.local.identifier == individual, ], 1)$location.lat
 
 tag.map.title <- tags$style(HTML("
   .leaflet-control.map-title { 
@@ -186,7 +175,7 @@ tag.map.title <- tags$style(HTML("
 "))
 
 title <- tags$div(
-  tag.map.title, HTML(paste0("Last location of individual ", id, " on ", end_date))
+  tag.map.title, HTML(paste0("Last location of individual ", individual, " on ", end_date))
 )  
 
 leaflet() %>% 
@@ -200,37 +189,38 @@ leaflet() %>%
                    color = "red") %>%
   addControl(title, position = "topleft", className = "map-title")
 
-# create empty dataframe to store summary data
-summary <- data.frame(matrix(ncol = 5, nrow = 0))
-colnames(summary) <- c("individual", "last_n_days", "number_observations", "total_distance", "mean_distance")
+# create empty dataframe to store movement summary data
+movement_summary <- data.frame(matrix(ncol = 5, nrow = 0))
+movement_summary_columns <- c("individual", "last_n_days", "number_observations", "total_distance", "mean_distance")
+colnames(movement_summary) <- movement_summary_columns
 
 # compute summary statistics for last n days per individual
 for(individual in individuals) {
   
-  for (last_n_days in c(3, 7, 14, 21, 28)) {
+  for (last_n_days in c(1, 3, 7, 14, 21, 28)) {
     
   # filter data based on individual
-  individual_aggregated_data <- data_agg_id_date[data_agg_id_date$id == individual, ]
+  individual_data_aggregated <- data_aggregated[data_aggregated$tag.local.identifier == individual, ]
   
   # get max date
-  max_date <- max(individual_aggregated_data$date)
+  max_date <- max(individual_data_aggregated$date)
   
   # filter data based on date
-  individual_aggregated_data_filtered <- individual_aggregated_data[individual_aggregated_data$date > max_date - last_n_days, ]
+  individual_data_aggregated_filtered <- individual_data_aggregated[individual_data_aggregated$date > max_date - last_n_days, ]
   
   # create empty dataframe to store individual summary data
-  individual_summary_data <- data.frame(matrix(ncol = 5, nrow = 0))
-  colnames(individual_summary_data) <- c("individual", "last_n_days", "number_observations", "total_distance", "mean_distance")
-  individual_summary_data[1, 1] = individual
-  individual_summary_data[1, 2] = last_n_days
+  individual_movement_summary <- data.frame(matrix(ncol = 5, nrow = 0))
+  colnames(individual_movement_summary) <- movement_summary_columns
+  individual_movement_summary[1, 1] = individual
+  individual_movement_summary[1, 2] = last_n_days
   
   # compute summary statistics
-  individual_summary_data[1, 3] = dim(individual_aggregated_data_filtered)[1]
-  individual_summary_data[1, 4] = sum(individual_aggregated_data_filtered$distance_meters)
-  individual_summary_data[1, 5] = mean(individual_aggregated_data_filtered$distance_meters)
+  individual_movement_summary[1, 3] = dim(individual_data_aggregated_filtered)[1]
+  individual_movement_summary[1, 4] = round(sum(individual_data_aggregated_filtered$distance_meters), 2)
+  individual_movement_summary[1, 5] = round(mean(individual_data_aggregated_filtered$distance_meters), 2)
   
-  # append summary data to existing dataframe
-  summary <- rbind(summary, individual_summary_data)
+  # append individual movement summary data to existing dataframe
+  movement_summary <- rbind(movement_summary, individual_movement_summary)
     
   }
   

@@ -18,10 +18,14 @@ library(htmltools)
 # select last n days to be analyzed (minimum 28)
 last_n_days <- 365
 
-# select species
+# select species or test data
 species <- "buffalo"
 # species <- "bat"
 # species <- "goose"
+# test_data <- "greylgeese"
+# test_data <- "whitefgeese"
+# test_data <- "stork"
+# test_data <- "goat"
 
 # select file
 if (species == "buffalo") {
@@ -30,8 +34,16 @@ if (species == "buffalo") {
   file <- "Straw-colored fruit bats (Eidolon helvum) in Africa 2009-2014.rds"
 } else if (species == "goose") {
   file <- "Migration timing in white-fronted geese (data from Klzsch et al. 2016).rds"
+} else if (test_data == "greylgeese") {
+  file <- "input1_greylgeese.rds"
+} else if (test_data == "whitefgeese") {
+  file <- "input2_whitefgeese.rds"
+} else if (test_data == "stork") {
+  file <- "input3_stork.rds"
+} else if (test_data == "goat") {
+  file <- "input4_goat.rds"
 } else {
-  print("Selected species not available. Please select one that is available.")
+  print("Selected species or test data not available.")
 }
 
 # read data
@@ -42,6 +54,15 @@ data <- as.data.frame(data)
 
 # cast tag.local.identifier to character
 data$tag.local.identifier <- as.character(data$tag.local.identifier)
+
+# make sure right coordinates are used
+if ("coords.x1" %in% names(data)) {
+  data$location.lat <- data$coords.x1
+}
+
+if ("coords.x2" %in% names(data)) {
+  data$location.long <- data$coords.x2
+}
 
 # get dimensions and individuals
 dim(data)

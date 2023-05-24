@@ -28,6 +28,6 @@ The script `stationarity_analysis.R`
 
 Below are a time series and a map example for an individual from the buffalo dataset:
 
-![timeseries example](timeseries_example.png 'timeseries example')
+![time_series example](time_series_example.png 'time series example')
 
 ![map example](map_example.png 'map example')

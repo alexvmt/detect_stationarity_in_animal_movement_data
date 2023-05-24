@@ -17,7 +17,16 @@ The used datasets are transformed to RDS-format using the MoveApps platform.
 
 Move the downloaded transformed data into a directory called `data` outside of this repository.
 
-Below are a timeseries and a map example for an individual from the buffalo dataset:
+The script `stationarity_analysis.R`
+- loads a dataset,
+- retrieves some general characteristics of the loaded dataset,
+- processes the given data for each individual for a given time period,
+- computes aggregated distances for each individual,
+- plots the aggregated distances over time for a selected individual
+- plots the last coordinates on a map for a selected individual
+- and finally creates a movement summary table for all individuals in the given dataset.
+
+Below are a time series and a map example for an individual from the buffalo dataset:
 
 ![timeseries example](timeseries_example.png 'timeseries example')
 

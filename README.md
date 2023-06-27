@@ -1,5 +1,8 @@
 # Detect stationarity in animal movement data
 
+**This is a test repository.**
+**Our final contribution to the EMAC23 Coding Challenge can be found in [this](https://github.com/alexvmt/animal-movement-summary-and-stationarity-analysis) repository.**
+
 EMAC23 Coding Challenge: https://www.moveapps.org/#news
 
 Use Cases: https://www.moveapps.org/assets/EMAC23_CodingChallenge_Details2.eeb3420c.pdf -> Challenge 1: Stationarity
